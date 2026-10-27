@@ -1,0 +1,42 @@
+name: dco
+
+on:
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  signoff:
+    name: 校验 DCO 签名
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 检查每个提交的 Signed-off-by
+        run: |
+          set -e
+          base="${{ github.event.pull_request.base.sha }}"
+          head="${{ github.event.pull_request.head.sha }}"
+          fail=0
+          count=0
+          for c in $(git rev-list "$base..$head"); do
+            count=$((count + 1))
+            subject=$(git log -1 --format=%s "$c")
+            if git log -1 --format=%B "$c" | grep -Eqi '^Signed-off-by: .+ <.+@.+>'; then
+              echo "OK   $c  $subject"
+            else
+              echo "::error::提交 $c 缺少 Signed-off-by 行：$subject"
+              fail=1
+            fi
+          done
+          echo "共检查 $count 个提交"
+          if [ "$fail" -ne 0 ]; then
+            echo "::error::存在未签名的提交，请执行 git rebase --signoff 后重新推送"
+            exit 1
+          fi
+          echo "DCO 检查通过"

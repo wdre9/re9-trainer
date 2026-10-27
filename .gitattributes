@@ -1,0 +1,10 @@
+# 换行符与文本转换策略
+#
+# Lua 脚本必须按原字节存储与检出，禁止任何 CRLF/LF 自动转换，
+# 否则文件哈希会变化，与我们公布在 README 与 Release 中的 SHA256 不一致。
+* -text
+
+# 以下类型允许按文本处理（仅在补丁场景下有实际意义）
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf

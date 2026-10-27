@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 使用与安装问题 / Usage & Installation
+    url: https://github.com/wdre9/re9-trainer/blob/main/README.md
+    about: 安装路径、配置文件、调试面板开启方式，先看 README
+  - name: 安全漏洞 / Security Vulnerability
+    url: https://github.com/wdre9/re9-trainer/security/advisories/new
+    about: 请勿公开披露，走私密漏洞报告
+  - name: REFramework 本体问题 / REFramework Issues
+    url: https://github.com/praydog/REFramework/issues
+    about: 框架加载失败、dinput8.dll、脚本未出现在列表中，属于框架问题

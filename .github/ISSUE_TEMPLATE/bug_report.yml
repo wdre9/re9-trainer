@@ -1,0 +1,86 @@
+name: Bug 报告 / Bug Report
+description: 功能失效、Hook 未命中、游戏报错或崩溃
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        提交前请先确认：
+        1. 你使用的是 **REFramework Nightly**，不是稳定版
+        2. 已阅读 README 的「已知限制」章节，问题不在列举范围内
+        3. 已进入可操作的游戏世界后再测试（主菜单下多数功能不生效）
+
+  - type: input
+    id: game-version
+    attributes:
+      label: 游戏版本
+      description: Steam 或 Epic，以及游戏版本号（如 1.0.2）
+      placeholder: "Steam / 1.0.2"
+    validations:
+      required: true
+
+  - type: input
+    id: reframework-build
+    attributes:
+      label: REFramework 构建日期
+      description: 在 REFramework 面板首页可以看到；也可填 Nightly 下载日期
+      placeholder: "2026-10-20 nightly"
+    validations:
+      required: true
+
+  - type: input
+    id: trainer-version
+    attributes:
+      label: 修改器版本
+      description: 见脚本文件名或 README 版本号
+      placeholder: "v11.2"
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: 问题描述
+      description: 哪个功能、什么表现、与你预期差在哪
+      placeholder: |
+        例如：勾选「无限弹药」后，射击时弹匣仍然递减，但 HUD 显示满弹。
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: 复现步骤
+      placeholder: |
+        1. 进入存档
+        2. 打开 REFramework 面板 → Script Generated UI
+        3. 勾选 xxx
+        4. 开一枪
+        5. 观察到 xxx
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 日志或调试信息
+      description: |
+        将 `reframework/data/marvis_re9_trainer.json` 中的 `"dbg"` 改为 `true`，
+        重现问题后附上 `reframework/data/marvis_probe.json` 的相关片段，
+        或 REFramework 控制台中的 `[Trainer]` 行。
+      render: text
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: 确认项
+      options:
+        - label: 我使用的是 REFramework Nightly
+          required: true
+        - label: 我已阅读 README 的「已知限制」章节
+          required: true
+        - label: 该问题在重启游戏后仍可复现
+          required: false

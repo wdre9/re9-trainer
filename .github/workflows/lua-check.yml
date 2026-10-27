@@ -1,0 +1,67 @@
+name: lua-check
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  syntax:
+    name: Lua 语法检查
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Lua 5.4
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq lua5.4
+
+      - name: 检查脚本语法
+        run: |
+          set -e
+          f=reframework/autorun/marvis_re9_trainer.lua
+          if [ ! -f "$f" ]; then
+            echo "::error::找不到 $f"
+            exit 1
+          fi
+          luac5.4 -p "$f"
+          echo "语法检查通过：$f"
+
+      - name: 输出文件指纹
+        run: |
+          f=reframework/autorun/marvis_re9_trainer.lua
+          printf '字节数: %s\n' "$(wc -c < "$f" | tr -d ' ')"
+          printf '行数: %s\n' "$(wc -l < "$f" | tr -d ' ')"
+          printf 'SHA256: %s\n' "$(sha256sum "$f" | cut -d' ' -f1)"
+
+  version-guard:
+    name: 版本与变更日志一致性
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 变更脚本时必须同步 CHANGELOG
+        run: |
+          set -e
+          base="${{ github.event.pull_request.base.sha }}"
+          head="${{ github.event.pull_request.head.sha }}"
+          changed=$(git diff --name-only "$base" "$head")
+          echo "变更文件："
+          echo "$changed"
+          if echo "$changed" | grep -q '^reframework/autorun/marvis_re9_trainer\.lua$'; then
+            if ! echo "$changed" | grep -q '^CHANGELOG\.md$'; then
+              echo "::error::脚本已修改但未更新 CHANGELOG.md"
+              exit 1
+            fi
+          fi
+          echo "检查通过"
