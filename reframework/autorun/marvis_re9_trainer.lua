@@ -1,5 +1,13 @@
+-- SPDX-License-Identifier: GPL-3.0-or-later
+--
+-- Copyright (C) 2026 wdre9
+--
+-- This program is free software: you can redistribute it and/or modify it under
+-- the terms of the GNU General Public License as published by the Free Software
+-- Foundation, either version 3 of the License, or (at your option) any later version.
+
 --[[
-    wdre9 RE9 Trainer v11.2
+    wdre9 RE9 Trainer v11.3
     Resident Evil 9 / BIOHAZARD requiem — REFramework Lua Mod
     简体中文 / English 双文 UI，一键切换
     Author: wdre9 (self-developed, API patterns verified against community trainers)
@@ -1139,5 +1147,5 @@ re.on_script_reset(function()
     R.god_orig = nil
 end)
 
-pcall(raw_write, "==== SESSION " .. tostring(os.date("%Y-%m-%d %H:%M:%S")) .. " v11.2 ====")
-if log then log.info("[Trainer] wdre9 RE9 Trainer v11.2 loaded") end
+pcall(raw_write, "==== SESSION " .. tostring(os.date("%Y-%m-%d %H:%M:%S")) .. " v11.3 ====")
+if log then log.info("[Trainer] wdre9 RE9 Trainer v11.3 loaded") end

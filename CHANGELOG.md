@@ -6,9 +6,21 @@
 ## [Unreleased]
 
 ### Planned
-- 脚本首行加入 SPDX 标识：`-- SPDX-License-Identifier: GPL-3.0-or-later`
-- 「无限投掷物」按 `app.ItemID` 收窄范围，仅作用于投掷物类别，不再连带影响治疗消耗品与合成材料
+- 「无限投掷物」按物品类别收窄范围，仅作用于投掷物类别，不再连带影响治疗消耗品与合成材料
 - 补充 CI 静态检查覆盖（luacheck 规则集）
+
+## [v11.3] - 2026-10-28
+
+### Added
+- 脚本首行加入机器可读的 SPDX 标识：`-- SPDX-License-Identifier: GPL-3.0-or-later`，附版权与授权说明，版本升至 v11.3
+
+### Changed
+- README 功能表改为只描述效果与配置项，不再公开 Hook、方法名与内部字段等实现细节
+- 公开文档（含 CONTRIBUTING）同步收敛实现手法描述
+- 文件哈希更新：52,314 字节 / 1,151 行，SHA256 `AFFE93413727A4AA20E74892AAEB61DBA045E56AFA9D92042D109931EBBD1845`
+
+### Fixed
+- 无功能回归（纯文档与标识变更）
 
 ## [v11.2] - 2026-10-28
 

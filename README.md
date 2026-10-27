@@ -1,10 +1,10 @@
 # 生化危机9 安魂曲 修改器 / Resident Evil Requiem Trainer
 
-**版本 Version:** v11.2 ・ **协议 License:** GPL-3.0-or-later ・ **平台 Platform:** Windows (Steam / Epic) ・ **框架 Framework:** REFramework (Nightly)
+**版本 Version:** v11.3 ・ **协议 License:** GPL-3.0-or-later ・ **平台 Platform:** Windows (Steam / Epic) ・ **框架 Framework:** REFramework (Nightly)
 
-一个基于 [REFramework](https://github.com/praydog/REFramework) 的 Lua 修改器，运行于《生化危机9 安魂曲 / Resident Evil Requiem》游戏内，提供战斗、武器、经济三类功能，界面支持简体中文与 English 一键切换。
+一个基于 [REFramework](https://github.com/praydog/REFramework) 的《生化危机9 安魂曲 / Resident Evil Requiem》游戏内修改器，提供战斗、武器、经济三类功能，界面支持简体中文与 English 一键切换。
 
-A Lua trainer for *Resident Evil Requiem* running inside the game via REFramework. Combat, weapon and economy toggles with a bilingual (Chinese / English) in-game UI.
+An in-game trainer for *Resident Evil Requiem*, running on REFramework. Combat, weapon and economy toggles with a bilingual (Chinese / English) UI.
 
 > 本工具为单机离线使用，不联网、不上传任何数据。详见 [免责声明](#免责声明--disclaimer)。
 >
@@ -33,30 +33,30 @@ A Lua trainer for *Resident Evil Requiem* running inside the game via REFramewor
 
 界面分为「战斗 / Combat」「武器 / Weapon」「经济 / Economy」三个分区。
 
-| 功能 | Feature | 配置字段 | 实现方式 |
+| 功能 | Feature | 配置字段 | 效果 |
 |---|---|---|---|
-| 无敌 / 无视伤害 | God Mode / Ignore Hits | `god` | 每帧调用 `HitPoint.set_Invincible(true)` + `setNoDieCharacter(true)`，血量低于上限时回满。关闭时恢复开启前的原状态，不覆盖剧情或其他 mod 的设置 |
-| 无限生命 | Infinite Health | `inf_hp` | 每帧把 `CurrentHitPoint` 拉回 `CurrentMaximumHitPoint` |
-| 无限投掷物 | Infinite Throwables | `inf_throw` | Hook `app.Inventory.consumeStock` 的两个重载，命中时返回 `SKIP_ORIGINAL` 阻止库存扣减。**注意：这是通用入口拦截，实际覆盖范围见下方说明** |
-| 无限弹药 | Infinite Ammo | `inf_ammo` | 只读 Hook 组合：`getLoadedAmmoCount` 后置返回弹匣容量、`isAmmoEmpty` 恒 `false`、`setLoadedAmmoCount` 拦写、`consumeLoading` 跳过 |
-| 无需换弹 | No Reload | `no_reload` | 复用无限弹药机制（弹药不消耗即无需换弹）。换弹进行中会放行原逻辑，避免打断装填状态机 |
-| 即时重载 | Instant Reload | `instant_reload` | 每帧把 `PlayerGun` 的 `_ReloadSpeed` / `_BoltActionSpeed` / `_ShootMotionSpeed` 拉到极大值，关闭时还原原值 |
-| 无后坐力 | No Recoil | `no_recoil` | Hook `app.CameraRecoilController.addRecoil` / `updateRecoil`，返回 `SKIP_ORIGINAL` |
-| 快速射击 | Rapid Fire | `rapid_fire` | 每帧把 `PlayerEquipment` 的 `_ShotInterval` / `_ExcessShotInterval` / `_AddShotInterVal` 置 0，关闭时还原 |
-| 高伤害（两枪击杀） | High Damage (2-shot kill) | `ohk` | Hook `HitPoint.addDamageHitPoint` 登记命中目标，随后在帧回调里补一次高额伤害结算；会先排除玩家自身 |
-| CP 点数 | CP Points | `cp_value` | 写入 `app.AchievementManager._TotalClearPoint`，写后读回校验，失败时按 `RecordManager` / `BonusManager` / `GameDataManager` 顺序回退尝试 |
+| 无敌 / 无视伤害 | God Mode / Ignore Hits | `god` | 受到攻击不掉血，也不会被判定致死。关闭后立即恢复正常受伤逻辑，不影响剧情演出与其他模组的设定 |
+| 无限生命 | Infinite Health | `inf_hp` | 生命条始终保持满值 |
+| 无限投掷物 | Infinite Throwables | `inf_throw` | 投掷物数量不再减少；实际覆盖范围见下方说明 |
+| 无限弹药 | Infinite Ammo | `inf_ammo` | 弹匣内弹药不再消耗，界面数字同步不跳动 |
+| 无需换弹 | No Reload | `no_reload` | 持续射击不会触发换弹动作 |
+| 即时重载 | Instant Reload | `instant_reload` | 手动换弹几乎瞬间完成，射击节奏不受装填拖累 |
+| 无后坐力 | No Recoil | `no_recoil` | 连续开火时准星不上跳、不偏移 |
+| 快速射击 | Rapid Fire | `rapid_fire` | 射速大幅提升，可长时间压制 |
+| 高伤害（两枪击杀） | High Damage (2-shot kill) | `ohk` | 命中敌人造成极高伤害，通常两枪击杀；不会误伤自己 |
+| CP 点数 | CP Points | `cp_value` | 把关通点数直接设为指定值，界面即时刷新 |
 
-**关于「无限投掷物」覆盖范围 / About Infinite Throwables scope**
+**关于「无限投掷物」的覆盖范围 / About Infinite Throwables scope**
 
-该开关拦截的是库存消耗的通用入口 `app.Inventory.consumeStock`，**不区分物品类型**。因此实际生效范围包括：
+这个开关的作用是让消耗品「用不掉」。它**不区分物品种类**，因此开启后以下物品的数量都不会减少：
 
 - 投掷物（手雷、燃烧瓶等）
 - 治疗类消耗品（医疗注射器、急救喷雾等）
-- 其他经由同一入口扣减的消耗品，可能包含合成材料
+- 其他同类消耗品，可能包含合成材料
 
-也就是说，开启后这些物品的数量都不会减少。这是 v11.2 的既定行为，不是 bug，但也不是精确的白名单实现。按物品类型收窄范围已列入后续计划。
+也就是说这是一项「消耗品不减」的效果，而不是只针对投掷物的精确开关。按物品类别收窄范围已列入后续计划。
 
-This toggle hooks the generic stock-consumption entry `app.Inventory.consumeStock` **without filtering by item type**. It therefore covers throwables, healing consumables (syringes, first-aid spray) and anything else routed through the same call — possibly crafting materials. Precise per-item filtering is on the roadmap.
+This toggle makes consumables non-depleting **without filtering by item type**, so it also covers healing items (syringes, first-aid spray) and possibly crafting materials — not throwables alone. Precise per-category filtering is planned.
 
 ---
 
@@ -65,11 +65,11 @@ This toggle hooks the generic stock-consumption entry `app.Inventory.consumeStoc
 | 项目 | 要求 |
 |---|---|
 | 游戏 | Resident Evil Requiem / 生化危机9 安魂曲（Steam 或 Epic 版本） |
-| 框架 | **REFramework Nightly 版本**（必须）。Release 稳定版的 Lua API 可能缺少本脚本用到的字段与方法 |
+| 框架 | **REFramework Nightly 版本**（必须）。Release 稳定版的脚本接口可能不完整 |
 | 平台 | Windows 10 / 11，64 位 |
 | 运行方式 | 游戏内脚本，不需要额外进程，不需要 Cheat Engine |
 
-**必须使用 Nightly。** 使用稳定版时，`app.PlayerEquipment` / `app.PlayerGun` 的部分方法可能不存在，脚本会把这些 Hook 块标记为 `missing` 并跳过，对应功能静默失效（不会崩溃）。
+**必须使用 Nightly。** 使用稳定版时，部分功能可能静默失效（开关可勾选但不生效），脚本不会崩溃，也不会影响游戏本体运行。
 
 ---
 
@@ -82,7 +82,7 @@ This toggle hooks the generic stock-consumption entry `app.Inventory.consumeStoc
 <游戏安装目录>\reframework\autorun\marvis_re9_trainer.lua
 ```
 
-3. 启动游戏，进入存档（存档界面内的玩家上下文未就绪，功能在进入可操作世界后才生效）。
+3. 启动游戏，进入存档（存档界面内玩家尚未就绪，功能在进入可操作世界后才生效）。
 
 ```
 <游戏安装目录>\
@@ -132,15 +132,15 @@ This toggle hooks the generic stock-consumption entry `app.Inventory.consumeStoc
 | `no_recoil` | bool | `false` | 无后坐力 |
 | `rapid_fire` | bool | `false` | 快速射击 |
 | `ohk` | bool | `false` | 高伤害（两枪击杀） |
-| `inf_throw` | bool | `false` | 无限投掷物 |
+| `inf_throw` | bool | `false` | 无限投掷物 / 消耗品不减 |
 | `cp_value` | number | `0` | 要写入的 CP 数值，非负整数 |
 | `dbg` | bool | `false` | 调试面板与调试日志开关，默认隐藏 |
 
-**打开调试面板**：关闭游戏，编辑上面的 json，把 `"dbg"` 改成 `true` 再启动游戏。开启后在主窗口之外会多出一个 `wdre9 DEBUG` 窗口，显示 Hook 代数、各 Hook 计数器、当前 PE/Gun 引用类型，并可一键重置计数。
+**打开调试面板**：关闭游戏，编辑上面的 json，把 `"dbg"` 改成 `true` 再启动游戏。开启后在主窗口之外会多出一个 `wdre9 DEBUG` 窗口，显示运行状态与各项计数，并可一键清零重新统计。
 
 同时会在 `reframework\data\marvis_probe.json` 写诊断日志，上限 800 行（约 100 KB），写满即停，不会无限增长。**日常使用请保持 `dbg` 为 `false`**，否则会有额外磁盘写入。
 
-调试字段初值参考：
+字段初值参考：
 
 ```json
 {
@@ -164,27 +164,27 @@ This toggle hooks the generic stock-consumption entry `app.Inventory.consumeStoc
 ## 已知限制 / Known Limitations
 
 1. **必须 Nightly**。使用 REFramework 稳定版时部分功能会静默失效。
-2. **高伤害是「两枪击杀」，不是真正的一击必杀**。引擎对单次伤害有钳制，第一枪压到临界值，第二枪由游戏自身逻辑结算击杀，死亡表现正常。
+2. **高伤害是「两枪击杀」，不是真正的一击必杀**。游戏对单次伤害设有上限，第一枪压到临界值，第二枪由游戏自身逻辑结算击杀，死亡表现正常。
 3. **阶段性 Boss 有伤害上限或无敌帧**，改伤害无法跳过阶段转换。
-4. **CP 字段是 UInt64**，只能填非负数；写入后可能需要在主菜单往返一次或重新读档才能刷新显示。
+4. **CP 只能填非负整数**；写入后可能需要在主菜单往返一次或重新读档才能刷新显示。
 5. **游戏没有「黄金」货币**，本工具未做金钱修改。
-6. **无限投掷物是通用入口拦截**，会连带影响医疗注射器、急救喷雾等治疗消耗品，也可能影响合成材料，详见[功能一览](#功能一览--features)。
+6. **无限投掷物是「消耗品不减」效果**，会连带影响医疗注射器、急救喷雾等治疗消耗品，也可能影响合成材料，详见[功能一览](#功能一览--features)。
 7. 调试面板默认隐藏，需手动在 json 里加 `"dbg": true`。
-8. 换弹状态标志设有 10 秒超时兜底：换弹被移动或受击打断时，标志会被强制清除，防止误判为持续换弹而放行弹药扣减。
-9. 当前 **v11.2 脚本文件头部尚未加 SPDX 许可证标识**。仓库整体按 GPL-3.0-or-later 授权，从 v11.3 起会在脚本首行加入 SPDX 标识（届时文件哈希会变化，届时更新下方校验值）。
+8. 换弹过程中移动或被击退导致换弹中断时，功能不会误判为「仍在换弹」而漏掉弹药消耗。
+9. 开启无敌后，某些剧情演出中的强制伤害可能一并被免疫；遇到剧情无法推进时请先关闭该功能。
 
 ---
 
 ## 文件校验 / File Verification
 
-v11.2 发布文件：
+v11.3 发布文件：
 
 | 项目 | 值 |
 |---|---|
 | 文件 | `reframework/autorun/marvis_re9_trainer.lua` |
-| 大小 | 51,985 字节 |
-| 行数 | 1,144 |
-| SHA256 | `8FFDA0B41BCB54F0335CCB4E85A9AF932AF4E4334512C850AFE362BC3D188BCF` |
+| 大小 | 52,314 字节 |
+| 行数 | 1,151 |
+| SHA256 | `AFFE93413727A4AA20E74892AAEB61DBA045E56AFA9D92042D109931EBBD1845` |
 
 Windows 校验命令：
 
@@ -198,17 +198,11 @@ Get-FileHash .\marvis_re9_trainer.lua -Algorithm SHA256
 
 ## 自行开发与调试 / Development & Debugging
 
-本脚本为单文件 Lua，无构建步骤，改完保存、游戏内按 REFramework 面板的「Reset Scripts」或重启游戏即可生效。
+本脚本为单文件 Lua，没有构建步骤。修改保存后，在 REFramework 面板点「Reset Scripts」或重启游戏即可生效。
 
-开发要点：
+调试可用 `"dbg": true` 打开的面板与日志（见[配置文件](#配置文件--configuration)）。日志会记录功能启停与异常兜底事件，提 Issue 时附上相关片段能显著加快定位。
 
-- **状态表存放在 `_G`**（`_G.__MARVIS_RE9_TRAINER_CFG__`），这样 Reset 后 Hook 回调与 UI 仍共享同一状态，避免重复注册 Hook。
-- **Hook 注册是分块且幂等的**：每块有 `installed` / `failed` / `missing` 三种状态，`failed` 下一帧重试，`missing` 表示当前框架版本不存在该方法，不阻塞其他功能。
-- **不要在 Hook 回调里调用被 Hook 的函数**。REFramework 会判定递归并抛异常，连带破坏正常伤害结算。本脚本的做法是在 Hook 里只登记目标，实际游戏调用延后到 `on_frame`。
-- **探查字段优先用类型定义逐个列名**，不要用不存在的批量扫描 API。
-- 日志走 `log.info`（REFramework 控制台）与可选 `marvis_probe.json`。
-
-Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
+希望提交改动的，请先阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。本项目只接受经过实机验证的改动。
 
 ---
 
@@ -216,9 +210,8 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 - 提交 PR 前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。
 - 所有提交必须带 DCO 签名：`git commit -s`。
-- 字段相关的改动**必须附上探测证据**（`dump_type_methods` 输出、日志片段或截图），否则不予合并。
-- 只接受经过实机验证的改动。请注明测试使用的游戏版本与 REFramework Nightly 构建日期。
-- Bug 报告请使用 Issue 模板，并填写游戏版本、REFramework 版本、复现步骤。
+- 功能相关的改动**必须附上实机验证记录**（游戏版本、Nightly 构建日期、测试步骤与结果），否则不予合并。
+- Bug 报告请使用 Issue 模板，并填写游戏版本、REFramework 版本、复现步骤与日志片段。
 
 ---
 
@@ -240,6 +233,12 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
 ## 许可 / License
 
 本项目以 **GNU General Public License v3.0 or later** 授权，全文见 [LICENSE](LICENSE)。
+
+脚本首行含机器可读的 SPDX 标识：
+
+```lua
+-- SPDX-License-Identifier: GPL-3.0-or-later
+```
 
 ```
 Copyright (C) 2026 wdre9
@@ -263,3 +262,5 @@ GNU General Public License for more details.
 
 - [praydog/REFramework](https://github.com/praydog/REFramework) — RE 引擎脚本框架与 Lua API
 - RE 引擎逆向与 trainer 社区的公开研究成果
+
+---
