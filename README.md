@@ -227,4 +227,8 @@ GNU General Public License for more details.
 - [praydog/REFramework](https://github.com/praydog/REFramework) — RE 引擎脚本框架与 Lua API
 - RE 引擎逆向与 trainer 社区的公开研究成果
 
+REFramework 以 **MIT 协议**授权（Copyright (c) 2019 praydog）。其完整版权声明与许可证文本已在本仓库根目录存档，见 [REFramework_LICENSE](REFramework_LICENSE)，再分发时请一并保留。
+
+REFramework is licensed under the **MIT License** (Copyright (c) 2019 praydog). The full copyright notice and license text are archived at [REFramework_LICENSE](REFramework_LICENSE) in the repository root; keep it when redistributing.
+
 ---

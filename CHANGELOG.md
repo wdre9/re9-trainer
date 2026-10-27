@@ -13,6 +13,7 @@
 
 ### Added
 - 脚本首行加入机器可读的 SPDX 标识：`-- SPDX-License-Identifier: GPL-3.0-or-later`，附版权与授权说明，版本升至 v11.3
+- 仓库根目录新增 `REFramework_LICENSE`：存档 REFramework（MIT）的版权声明与许可证原文，README 致谢章节提供指引
 
 ### Changed
 - README 功能表仅保留功能与效果描述，移除「配置字段」列；配置文件章节不再逐字段说明、不公开字段名与初值示例，避免实现细节被照搬
