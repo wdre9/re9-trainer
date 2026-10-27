@@ -46,7 +46,7 @@
 - 游戏版本（Steam / Epic）与 REFramework 构建日期
 - 出问题的功能项
 - 复现步骤
-- `"dbg": true` 下生成的 `marvis_probe.json` 关键片段，或 REFramework 控制台日志
+- 开启调试项后生成的 `marvis_probe.json` 关键片段，或 REFramework 控制台日志
 
 ## 会被拒绝的情况
 

@@ -33,18 +33,18 @@ An in-game trainer for *Resident Evil Requiem*, running on REFramework. Combat, 
 
 界面分为「战斗 / Combat」「武器 / Weapon」「经济 / Economy」三个分区。
 
-| 功能 | Feature | 配置字段 | 效果 |
-|---|---|---|---|
-| 无敌 / 无视伤害 | God Mode / Ignore Hits | `god` | 受到攻击不掉血，也不会被判定致死。关闭后立即恢复正常受伤逻辑，不影响剧情演出与其他模组的设定 |
-| 无限生命 | Infinite Health | `inf_hp` | 生命条始终保持满值 |
-| 无限投掷物 | Infinite Throwables | `inf_throw` | 投掷物数量不再减少；实际覆盖范围见下方说明 |
-| 无限弹药 | Infinite Ammo | `inf_ammo` | 弹匣内弹药不再消耗，界面数字同步不跳动 |
-| 无需换弹 | No Reload | `no_reload` | 持续射击不会触发换弹动作 |
-| 即时重载 | Instant Reload | `instant_reload` | 手动换弹几乎瞬间完成，射击节奏不受装填拖累 |
-| 无后坐力 | No Recoil | `no_recoil` | 连续开火时准星不上跳、不偏移 |
-| 快速射击 | Rapid Fire | `rapid_fire` | 射速大幅提升，可长时间压制 |
-| 高伤害（两枪击杀） | High Damage (2-shot kill) | `ohk` | 命中敌人造成极高伤害，通常两枪击杀；不会误伤自己 |
-| CP 点数 | CP Points | `cp_value` | 把关通点数直接设为指定值，界面即时刷新 |
+| 功能 | Feature | 效果 |
+|---|---|---|
+| 无敌 / 无视伤害 | God Mode / Ignore Hits | 受到攻击不掉血，也不会被判定致死。关闭后立即恢复正常受伤逻辑，不影响剧情演出与其他模组的设定 |
+| 无限生命 | Infinite Health | 生命条始终保持满值 |
+| 无限投掷物 | Infinite Throwables | 投掷物数量不再减少；实际覆盖范围见下方说明 |
+| 无限弹药 | Infinite Ammo | 弹匣内弹药不再消耗，界面数字同步不跳动 |
+| 无需换弹 | No Reload | 持续射击不会触发换弹动作 |
+| 即时重载 | Instant Reload | 手动换弹几乎瞬间完成，射击节奏不受装填拖累 |
+| 无后坐力 | No Recoil | 连续开火时准星不上跳、不偏移 |
+| 快速射击 | Rapid Fire | 射速大幅提升，可长时间压制 |
+| 高伤害（两枪击杀） | High Damage (2-shot kill) | 命中敌人造成极高伤害，通常两枪击杀；不会误伤自己 |
+| CP 点数 | CP Points | 把关通点数直接设为指定值，界面即时刷新 |
 
 **关于「无限投掷物」的覆盖范围 / About Infinite Throwables scope**
 
@@ -92,7 +92,7 @@ This toggle makes consumables non-depleting **without filtering by item type**, 
    │  └─ marvis_re9_trainer.lua   ← 本脚本
    └─ data\
       ├─ marvis_re9_trainer.json  ← 配置（脚本自动生成）
-      └─ marvis_probe.json        ← 调试日志（仅 dbg 开启时生成）
+      └─ marvis_probe.json        ← 调试日志（仅调试项开启时生成）
 ```
 
 **卸载**：删除 `reframework\autorun\marvis_re9_trainer.lua`，并按需删除 `reframework\data\marvis_re9_trainer.json`。
@@ -119,45 +119,9 @@ This toggle makes consumables non-depleting **without filtering by item type**, 
 <游戏安装目录>\reframework\data\marvis_re9_trainer.json
 ```
 
-字段说明：
+配置文件由脚本自动生成，界面中的开关与语言选择会自动保存到该文件，**日常使用无需手动编辑**。
 
-| 字段 | 类型 | 默认值 | 说明 |
-|---|---|---|---|
-| `lang` | string | `"zh"` | 界面语言，`"zh"` 或 `"en"` |
-| `god` | bool | `false` | 无敌 / 无视伤害 |
-| `inf_hp` | bool | `false` | 无限生命 |
-| `inf_ammo` | bool | `false` | 无限弹药 |
-| `no_reload` | bool | `false` | 无需换弹 |
-| `instant_reload` | bool | `false` | 即时重载 |
-| `no_recoil` | bool | `false` | 无后坐力 |
-| `rapid_fire` | bool | `false` | 快速射击 |
-| `ohk` | bool | `false` | 高伤害（两枪击杀） |
-| `inf_throw` | bool | `false` | 无限投掷物 / 消耗品不减 |
-| `cp_value` | number | `0` | 要写入的 CP 数值，非负整数 |
-| `dbg` | bool | `false` | 调试面板与调试日志开关，默认隐藏 |
-
-**打开调试面板**：关闭游戏，编辑上面的 json，把 `"dbg"` 改成 `true` 再启动游戏。开启后在主窗口之外会多出一个 `wdre9 DEBUG` 窗口，显示运行状态与各项计数，并可一键清零重新统计。
-
-同时会在 `reframework\data\marvis_probe.json` 写诊断日志，上限 800 行（约 100 KB），写满即停，不会无限增长。**日常使用请保持 `dbg` 为 `false`**，否则会有额外磁盘写入。
-
-字段初值参考：
-
-```json
-{
-  "lang": "zh",
-  "god": false,
-  "inf_hp": false,
-  "inf_ammo": false,
-  "no_reload": false,
-  "instant_reload": false,
-  "no_recoil": false,
-  "rapid_fire": false,
-  "ohk": false,
-  "inf_throw": false,
-  "cp_value": 0,
-  "dbg": false
-}
-```
+**调试面板（隐藏项）**：关闭游戏，编辑该 json 打开调试项后重启游戏，主窗口之外会多出一个 `wdre9 DEBUG` 窗口，显示运行状态与各项计数，并可一键清零重新统计。同时会在 `reframework\data\marvis_probe.json` 写诊断日志，上限 800 行（约 100 KB），写满即停，不会无限增长。**日常使用请保持调试项关闭**，否则会有额外磁盘写入。
 
 ---
 
@@ -169,7 +133,7 @@ This toggle makes consumables non-depleting **without filtering by item type**, 
 4. **CP 只能填非负整数**；写入后可能需要在主菜单往返一次或重新读档才能刷新显示。
 5. **游戏没有「黄金」货币**，本工具未做金钱修改。
 6. **无限投掷物是「消耗品不减」效果**，会连带影响医疗注射器、急救喷雾等治疗消耗品，也可能影响合成材料，详见[功能一览](#功能一览--features)。
-7. 调试面板默认隐藏，需手动在 json 里加 `"dbg": true`。
+7. 调试面板默认隐藏，需手动编辑配置文件打开调试项（见[配置文件](#配置文件--configuration)）。
 8. 换弹过程中移动或被击退导致换弹中断时，功能不会误判为「仍在换弹」而漏掉弹药消耗。
 9. 开启无敌后，某些剧情演出中的强制伤害可能一并被免疫；遇到剧情无法推进时请先关闭该功能。
 
@@ -200,7 +164,7 @@ Get-FileHash .\marvis_re9_trainer.lua -Algorithm SHA256
 
 本脚本为单文件 Lua，没有构建步骤。修改保存后，在 REFramework 面板点「Reset Scripts」或重启游戏即可生效。
 
-调试可用 `"dbg": true` 打开的面板与日志（见[配置文件](#配置文件--configuration)）。日志会记录功能启停与异常兜底事件，提 Issue 时附上相关片段能显著加快定位。
+调试可用配置文件中的隐藏调试项打开面板与日志（见[配置文件](#配置文件--configuration)）。日志会记录功能启停与异常兜底事件，提 Issue 时附上相关片段能显著加快定位。
 
 希望提交改动的，请先阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。本项目只接受经过实机验证的改动。
 
