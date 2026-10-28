@@ -7,7 +7,7 @@
 -- Foundation, either version 3 of the License, or (at your option) any later version.
 
 --[[
-    wdre9 RE9 Trainer v11.3
+    wdre9 RE9 Trainer v11.4
     Resident Evil 9 / BIOHAZARD requiem — REFramework Lua Mod
     简体中文 / English 双文 UI，一键切换
     Author: wdre9 (self-developed, API patterns verified against community trainers)
@@ -28,7 +28,6 @@ local C = _G.__MARVIS_RE9_TRAINER_CFG__ or {
     inf_hp = false,              -- 无限生命
     inf_ammo = false,            -- 无限弹药
     no_reload = false,           -- 无需换弹
-    instant_reload = false,      -- 即时重载
     no_recoil = false,           -- 无后坐力
     rapid_fire = false,          -- 快速射击
     ohk = false,                 -- v10.14 一击必杀(伤害放大)
@@ -53,7 +52,6 @@ local L = {
         inf_hp = "无限生命",
         inf_ammo = "无限弹药",
         no_reload = "无需换弹",
-        instant_reload = "即时重载",
         no_recoil = "无后坐力",
         rapid_fire = "快速射击",
         ohk = "高伤害（两枪击杀）",
@@ -75,7 +73,6 @@ local L = {
         inf_hp = "Infinite Health",
         inf_ammo = "Infinite Ammo",
         no_reload = "No Reload",
-        instant_reload = "Instant Reload",
         no_recoil = "No Recoil",
         rapid_fire = "Rapid Fire",
         ohk = "High Damage (2-shot kill)",
@@ -383,18 +380,15 @@ local function hp_tick()
 end
 
 -- ═══════════════════════════════════════════════════════════════════════
--- Feature: Rapid Fire / Instant Reload (per-frame, field-based)
+-- Feature: Rapid Fire (per-frame, field-based)
 -- ═══════════════════════════════════════════════════════════════════════
 -- 快速射击: 每帧把 PlayerEquipment 的射击间隔字段清零
--- 即时重载: 每帧把 PlayerGun 的装填速度字段拉到极大
--- 字段经 type probe 确认: _ShotInterval/_ExcessShotInterval/_ReloadSpeed/_BoltActionSpeed/_ShootMotionSpeed
+-- 字段经 type probe 确认: _ShotInterval/_ExcessShotInterval
 
 local _rapid_pe = nil
-local _reload_gun = nil
 local _rf_refresh = 0
 -- H4/H5: 原值缓存按实例地址保存; 刷新引用时不清空未恢复的原值
 local _rapid_orig = {}    -- {addr=<pe地址>, fields={_ShotInterval=...}}
-local _reload_orig = {}   -- {addr=<gun地址>, fields={_ReloadSpeed=...}}
 
 local function obj_addr(o)
     local ok, a = pcall(function() return sdk.to_int64(o:get_address()) end)
@@ -402,14 +396,13 @@ local function obj_addr(o)
 end
 
 local function rapid_reload_tick()
-    if not (C.rapid_fire or C.instant_reload) then return end
+    if not C.rapid_fire then return end
     local pc = pctx()
     if not pc then return end
     _rf_refresh = _rf_refresh + 1
     -- 每 300 帧刷新一次组件引用(应对切换武器/地图); 原值表保留, 切换实例时才重缓存
     if _rf_refresh % 300 == 0 then
         _rapid_pe = nil
-        _reload_gun = nil
     end
     if C.rapid_fire then
         local pe = _rapid_pe
@@ -431,37 +424,6 @@ local function rapid_reload_tick()
             pcall(function() pe:set_field("_AddShotInterVal", 0.0) end)
         end
     end
-    if C.instant_reload then
-        local gun = _reload_gun
-        if not gun then
-            pcall(function()
-                local go = pc:call("get_GameObject")
-                if go then
-                    -- H4: getComponent 需要 System.Type, RETypeDefinition 不可用
-                    local st = sdk.typeof and sdk.typeof("app.PlayerGun")
-                    if not st then
-                        local gun_td = sdk.find_type_definition("app.PlayerGun")
-                        if gun_td then st = gun_td:get_runtime_type() end
-                    end
-                    if st then gun = go:call("getComponent(System.Type)", st) end
-                end
-            end)
-            _reload_gun = gun
-        end
-        if gun then
-            -- 原值缓存(按实例地址): 换枪时缓存新枪原值, 同枪沿用
-            local addr = obj_addr(gun)
-            if _reload_orig.addr ~= addr then
-                _reload_orig = { addr = addr, fields = {} }
-                for _, fn in ipairs({"_ReloadSpeed", "_BoltActionSpeed", "_ShootMotionSpeed"}) do
-                    pcall(function() _reload_orig.fields[fn] = gun:get_field(fn) end)
-                end
-            end
-            for _, fn in ipairs({"_ReloadSpeed", "_BoltActionSpeed", "_ShootMotionSpeed"}) do
-                pcall(function() gun:set_field(fn, 9999.0) end)
-            end
-        end
-    end
 end
 
 -- 快速射击关闭时还原射击间隔字段(H5)
@@ -475,16 +437,6 @@ local function restore_rapid_orig()
     _rapid_orig = {}
 end
 
--- 即时重载关闭时还原装填速度字段(缓存丢失则跳过, 避免写死值)
-local function restore_reload_orig()
-    local gun = _reload_gun
-    if gun and _reload_orig.fields then
-        for fn, v in pairs(_reload_orig.fields) do
-            pcall(function() gun:set_field(fn, v) end)
-        end
-    end
-    _reload_orig = {}
-end
 
 -- ═══════════════════════════════════════════════════════════════════════
 -- Feature: Edit CP
@@ -935,13 +887,8 @@ re.on_frame(function()
         pcall(restore_rapid_orig)
         _G.__MARVIS_TRAINER_RF_PREV__ = false
     end
-    if not C.instant_reload and _G.__MARVIS_TRAINER_IR_PREV__ then
-        pcall(restore_reload_orig)
-        _G.__MARVIS_TRAINER_IR_PREV__ = false
-    end
     if C.rapid_fire then _G.__MARVIS_TRAINER_RF_PREV__ = true end
-    if C.instant_reload then _G.__MARVIS_TRAINER_IR_PREV__ = true end
-    if C.rapid_fire or C.instant_reload then
+    if C.rapid_fire then
         pcall(rapid_reload_tick)
     end
     -- v10: 一次性签名 dump(只写一次, 文件有 128 KB 硬上限)
@@ -1084,8 +1031,6 @@ re.on_draw_ui(function()
     C.inf_ammo = am_v
     local _, nr_v = imgui.checkbox(T("no_reload"), C.no_reload)
     C.no_reload = nr_v
-    local _, ir_v = imgui.checkbox(T("instant_reload"), C.instant_reload)
-    C.instant_reload = ir_v
     -- 未实现的开关不再暴露到 UI
     local _, nrc_v = imgui.checkbox(T("no_recoil"), C.no_recoil)
     C.no_recoil = nrc_v
@@ -1139,13 +1084,12 @@ re.on_draw_ui(function()
 end)
 
 -- Reset 时保留 hook(_G 标记防重复)与语言选择, 仅清运行时引用
--- H5: Reset 时清理已修改字段与引用(快速射击/即时重载原值恢复; God 引用失效)
+-- H5: Reset 时清理已修改字段与引用(快速射击原值恢复; God 引用失效)
 re.on_script_reset(function()
     pcall(restore_rapid_orig)
-    pcall(restore_reload_orig)
     R.hp_ref = nil
     R.god_orig = nil
 end)
 
-pcall(raw_write, "==== SESSION " .. tostring(os.date("%Y-%m-%d %H:%M:%S")) .. " v11.3 ====")
-if log then log.info("[Trainer] wdre9 RE9 Trainer v11.3 loaded") end
+pcall(raw_write, "==== SESSION " .. tostring(os.date("%Y-%m-%d %H:%M:%S")) .. " v11.4 ====")
+if log then log.info("[Trainer] wdre9 RE9 Trainer v11.4 loaded") end

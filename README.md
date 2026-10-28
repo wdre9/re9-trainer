@@ -1,6 +1,6 @@
 # 生化危机9 安魂曲 修改器 / Resident Evil Requiem Trainer
 
-**版本 Version:** v11.3 ・ **协议 License:** GPL-3.0-or-later ・ **平台 Platform:** Windows (Steam / Epic) ・ **框架 Framework:** REFramework (Nightly)
+**版本 Version:** v11.4 ・ **协议 License:** GPL-3.0-or-later ・ **平台 Platform:** Windows (Steam / Epic) ・ **框架 Framework:** REFramework (Nightly)
 
 一个基于 [REFramework](https://github.com/praydog/REFramework) 的《生化危机9 安魂曲 / Resident Evil Requiem》游戏内修改器，提供战斗、武器、经济三类功能，界面支持简体中文与 English 一键切换。
 
@@ -40,7 +40,6 @@ An in-game trainer for *Resident Evil Requiem*, running on REFramework. Combat, 
 | 无限投掷物 | Infinite Throwables | 投掷物数量不再减少；实际覆盖范围见下方说明 |
 | 无限弹药 | Infinite Ammo | 弹匣内弹药不再消耗，界面数字同步不跳动 |
 | 无需换弹 | No Reload | 持续射击不会触发换弹动作 |
-| 即时重载 | Instant Reload | 手动换弹几乎瞬间完成，射击节奏不受装填拖累 |
 | 无后坐力 | No Recoil | 连续开火时准星不上跳、不偏移 |
 | 快速射击 | Rapid Fire | 射速大幅提升，可长时间压制 |
 | 高伤害（两枪击杀） | High Damage (2-shot kill) | 命中敌人造成极高伤害，通常两枪击杀；不会误伤自己 |
@@ -141,14 +140,14 @@ This toggle makes consumables non-depleting **without filtering by item type**, 
 
 ## 文件校验 / File Verification
 
-v11.3 发布文件：
+v11.4 发布文件：
 
 | 项目 | 值 |
 |---|---|
 | 文件 | `reframework/autorun/marvis_re9_trainer.lua` |
-| 大小 | 52,314 字节 |
-| 行数 | 1,151 |
-| SHA256 | `AFFE93413727A4AA20E74892AAEB61DBA045E56AFA9D92042D109931EBBD1845` |
+| 大小 | 49,763 字节 |
+| 行数 | 1,045 |
+| SHA256 | `7908763B8B52BCF2A5DB05A5FAF2BC22BAFAFFA121FFB029A0128BF3F00872B3` |
 
 Windows 校验命令：
 
