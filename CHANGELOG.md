@@ -3,6 +3,12 @@
 本项目版本号遵循 `v主版本.次版本` 的形式，所有值得注意的变更记录于此。
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [v11.11] - 2026-10-29
+
+### Changed
+- 无后坐力补瞄准晃动链路 CameraAimShakeController（request / setRate / addRate / setSpeedRate / onApply），HOOK_GEN 升至 27
+- 版本号同步升至 v11.11；文件哈希更新：53,397 字节 / 1,094 行，SHA256 `3E84360A6C6B75A02D60EB85EF477A3D791035F9D770B95A878A90A85C35A5E9`
+
 ## [v11.4] - 2026-10-28
 
 ### Removed

@@ -1,6 +1,6 @@
 # 生化危机9 安魂曲 修改器 / Resident Evil Requiem Trainer
 
-**版本 Version:** v11.4 ・ **协议 License:** GPL-3.0-or-later ・ **平台 Platform:** Windows (Steam / Epic) ・ **框架 Framework:** REFramework (Nightly)
+**版本 Version:** v11.11 ・ **协议 License:** GPL-3.0-or-later ・ **平台 Platform:** Windows (Steam / Epic) ・ **框架 Framework:** REFramework (Nightly)
 
 一个基于 [REFramework](https://github.com/praydog/REFramework) 的《生化危机9 安魂曲 / Resident Evil Requiem》游戏内修改器，提供战斗、武器、经济三类功能，界面支持简体中文与 English 一键切换。
 
@@ -140,14 +140,14 @@ This toggle makes consumables non-depleting **without filtering by item type**, 
 
 ## 文件校验 / File Verification
 
-v11.4 发布文件：
+v11.11 发布文件：
 
 | 项目 | 值 |
 |---|---|
 | 文件 | `reframework/autorun/marvis_re9_trainer.lua` |
-| 大小 | 49,763 字节 |
-| 行数 | 1,045 |
-| SHA256 | `7908763B8B52BCF2A5DB05A5FAF2BC22BAFAFFA121FFB029A0128BF3F00872B3` |
+| 大小 | 53,397 字节 |
+| 行数 | 1,094 |
+| SHA256 | `3E84360A6C6B75A02D60EB85EF477A3D791035F9D770B95A878A90A85C35A5E9` |
 
 Windows 校验命令：
 

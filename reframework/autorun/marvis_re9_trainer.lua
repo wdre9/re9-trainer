@@ -7,7 +7,7 @@
 -- Foundation, either version 3 of the License, or (at your option) any later version.
 
 --[[
-    wdre9 RE9 Trainer v11.4
+    wdre9 RE9 Trainer v11.11
     Resident Evil 9 / BIOHAZARD requiem — REFramework Lua Mod
     简体中文 / English 双文 UI，一键切换
     Author: wdre9 (self-developed, API patterns verified against community trainers)
@@ -161,6 +161,7 @@ local DBG_KEYS = {
     "consume_call", "consume_skip", "consume_pass",
     "rl_start", "rl_end", "rl_end_pg",
     "dmg_call", "ohk_apply", "ohk_apply_fail", "ohk_skip_player",
+    "nrc_hit",
 }
 
 -- v10.1: 改用 json.dump_file(本 build 已验证可用), 不再依赖被沙箱限制的 io
@@ -271,6 +272,36 @@ local function dump_sig()
             end
         end
     end
+    -- v11.11: 扩展探测——枚举 PlayerGun/PlayerEquipment 方法名, 过滤射击/散布/后坐力相关,
+    -- 定位散布控制源(散布不在 dump 已有字段中, 需方法名定位)
+    for _, g in ipairs({
+        { "app.PlayerGun", { "shoot", "fire", "spread", "bias", "accuracy", "recoil", "shake", "aim", "bullet", "shot", "calibr", "retical", "muzzle" } },
+        { "app.PlayerEquipment", { "shoot", "fire", "spread", "bias", "accuracy", "recoil", "shake", "aim", "bullet", "shot" } },
+        { "app.CameraAimShakeController", { "request", "setRate", "addRate", "setSpeedRate", "addSpeedRate", "onApply", "initRate" } },
+    }) do
+        local tn, filters = g[1], g[2]
+        local td = sdk.find_type_definition(tn)
+        raw_write("== METHSCAN " .. tn .. " ==")
+        if not td then
+            raw_write(tn .. " :: TYPE NOT FOUND")
+        else
+            for _, m in ipairs(td:get_methods()) do
+                local okn, mn = pcall(function() return m:get_name() end)
+                if okn and mn then
+                    local low = mn:lower()
+                    for _, f in ipairs(filters) do
+                        if low:find(f) then
+                            local np = "?"
+                            pcall(function() np = m:get_num_params() end)
+                            raw_write("  M: " .. mn .. " params=" .. tostring(np))
+                            break
+                        end
+                    end
+                end
+            end
+        end
+        raw_write("== METHSCAN END " .. tn .. " ==")
+    end
     raw_write("==== SIG END ====")
 end
 
@@ -314,7 +345,8 @@ end
 local function snapshot()
     local keys = {"glac_call", "glac_cap", "setl_call", "setl_skip", "setl_pass_empty",
                   "consume_call", "consume_skip", "consume_pass", "rl_start", "rl_end", "rl_end_pg",
-                  "dmg_call", "ohk_apply", "ohk_apply_fail", "ohk_skip_player"}
+                  "dmg_call", "ohk_hit", "ohk_badhp", "ohk_apply", "ohk_apply_fail", "ohk_skip_player",
+                  "nrc_hit"}
     local parts = {}
     for _, k in ipairs(keys) do
         parts[#parts + 1] = k .. "=" .. tostring(CNT[k] or 0)
@@ -407,7 +439,9 @@ local function rapid_reload_tick()
     if C.rapid_fire then
         local pe = _rapid_pe
         if not pe then
-            pcall(function() pe = pc:call("get_PlayerEquipment") end)
+            -- v11.5: 改用 getComponent 链路取真正开火的 PlayerEquipment 实例(与社区一致);
+            -- get_PlayerEquipment 返回对象疑似非活动武器实例, 写入间隔字段无效果
+            pcall(function() pe = get_pe() end)
             _rapid_pe = pe
         end
         if pe then
@@ -415,13 +449,23 @@ local function rapid_reload_tick()
             local addr = obj_addr(pe)
             if _rapid_orig.addr ~= addr then
                 _rapid_orig = { addr = addr, fields = {} }
-                for _, fn in ipairs({"_ShotInterval", "_ExcessShotInterval", "_AddShotInterVal"}) do
+                for _, fn in ipairs({"_ShotInterval", "_CalcShotInterval", "_ExcessShotInterval"}) do
                     pcall(function() _rapid_orig.fields[fn] = pe:get_field(fn) end)
                 end
             end
-            pcall(function() pe:set_field("_ShotInterval", 0.0) end)
+            -- v11.7: 仅写 3 个有效字段(_ShotInterval/_CalcShotInterval/_ExcessShotInterval),
+            -- _AddShotInterVal 字段不存在(REFramework 报 invalid field), 已移除
+            local wv = 0.005
+            pcall(function() pe:set_field("_ShotInterval", wv) end)
+            pcall(function() pe:set_field("_CalcShotInterval", wv) end)
             pcall(function() pe:set_field("_ExcessShotInterval", 0.0) end)
-            pcall(function() pe:set_field("_AddShotInterVal", 0.0) end)
+            -- 读回诊断: 值被覆盖(≠写入值)时记录一次
+            local rb = nil
+            pcall(function() rb = pe:get_field("_ShotInterval") end)
+            if rb == nil or math.abs((rb or 0) - wv) > 0.000001 then
+                plog("rf_readback", "addr=" .. tostring(addr) .. " wrote=" .. tostring(wv) .. " readback=" .. tostring(rb))
+            end
+            plog_once("rf_pe", "PE=" .. type_name(pe) .. " addr=" .. tostring(addr))
         end
     end
 end
@@ -495,7 +539,7 @@ end
 -- Hooks (installed once)
 -- ═══════════════════════════════════════════════════════════════════════
 
-local HOOK_GEN = 26  -- v11.0 clean release
+local HOOK_GEN = 27  -- v11.11: 无后坐力补瞄准晃动链路 CameraAimShakeController
 
 local function install_hooks()
     -- H1: 逐块注册状态表(pending/installed/missing/failed), 重试只处理 failed;
@@ -567,16 +611,15 @@ local function install_hooks()
                     return sdk.PreHookResult.CALL_ORIGINAL
                 end
                 bump("dmg_call")
-                local hp = nil
-                pcall(function() hp = sdk.to_managed_object(args[2]) end)
-                if hp then
-                    local b4, b5 = true, true
-                    pcall(function() b4 = (sdk.to_int64(args[4]) ~= 0) end)
-                    pcall(function() b5 = (sdk.to_int64(args[5]) ~= 0) end)
-                    R.ohk_q = R.ohk_q or {}
-                    R.ohk_q[hp] = { b4 = b4, b5 = b5 }
-                    bump("ohk_hit")
-                end
+                -- v11.9: 废弃跨帧入队方案——实测 on_frame 结算时对象已失效
+                -- (ohk_apply_fail=55 全失败, before=nil), 改为 thaaaef 已验证方案:
+                -- hook 内直接改写伤害参数 args[3]=999999, 引擎对单次伤害的钳制
+                -- 使第一枪打到临界、第二枪必死, 符合两枪击杀设计
+                -- args[2]=this(被伤害者 HitPoint), args[3]=damage(Int32)
+                pcall(function()
+                    args[3] = sdk.to_ptr(999999)
+                end)
+                bump("ohk_hit")
                 return sdk.PreHookResult.CALL_ORIGINAL
             end,
             function(rv) return rv end)
@@ -777,10 +820,16 @@ local function install_hooks()
         if m2 then sdk.hook(m2, hook_fn, nil) end
     end)
 
-    -- No recoil / no sway (仅保留相机后坐力控制, 瞄准晃动控制器 onUpdate SKIP 有锁定瞄准态风险, 已移除)
+    -- No recoil (相机后坐力 + 武器后坐力源头; v11.10 重写: 旧目标 addRecoil/addCameraShakeRequest/clearCameraShakeForce 在本 build dump 中不存在, 实际仅 updateRecoil 命中且拦不住)
     _reg("no_recoil", function()
+        -- v11.10: 按 probe_dump 实测方法重写。相机侧 Hook request/setRate/updateRecoil/onApply 全链路,
+        -- 武器侧 Hook PlayerGun.setAddRecoilShakeRate 从源头掐断 _RecoilShakeRate 写入(快速射击每发都会走这里)
+        -- v11.11: 镜头仍晃 → 补上瞄准晃动链路 CameraAimShakeController(request/setRate/addRate/setSpeedRate/onApply)。
+        --         注: 社区旧版含 onUpdate 但担心锁瞄准态已移除, 故只拦请求/速率写入, 不拦 onUpdate
         local classes = {
-            {"app.CameraRecoilController", {"addRecoil", "updateRecoil"}},
+            {"app.CameraRecoilController", {"request", "setRate", "updateRecoil", "onApply"}},
+            {"app.PlayerGun", {"setAddRecoilShakeRate"}},
+            {"app.CameraAimShakeController", {"request", "setRate", "addRate", "setSpeedRate", "onApply"}},
         }
         local hooked = 0
         local gen = HOOK_GEN
@@ -789,7 +838,10 @@ local function install_hooks()
                 sdk.hook(meth,
                     function(args)
                         if _G.__MARVIS_TRAINER_HOOKED__ ~= gen then return sdk.PreHookResult.CALL_ORIGINAL end
-                        if C.no_recoil then return sdk.PreHookResult.SKIP_ORIGINAL end
+                        if C.no_recoil then
+                            bump("nrc_hit")
+                            return sdk.PreHookResult.SKIP_ORIGINAL
+                        end
                         return sdk.PreHookResult.CALL_ORIGINAL
                     end,
                     function(rv) return rv end)
@@ -830,6 +882,7 @@ local function install_hooks()
             end
             if log then log.warn("[Trainer] No-recoil exact match miss, fell back to substring") end
         end
+        if log then log.info("[Trainer] No-recoil hooks installed: " .. tostring(hooked)) end
     end)
 
     -- H1: 依据逐块状态判断整体完成; 有 failed 块下帧重试, missing 视为环境不可用(不阻塞其他功能)
@@ -1091,5 +1144,5 @@ re.on_script_reset(function()
     R.god_orig = nil
 end)
 
-pcall(raw_write, "==== SESSION " .. tostring(os.date("%Y-%m-%d %H:%M:%S")) .. " v11.4 ====")
-if log then log.info("[Trainer] wdre9 RE9 Trainer v11.4 loaded") end
+pcall(raw_write, "==== SESSION " .. tostring(os.date("%Y-%m-%d %H:%M:%S")) .. " v11.11 ====")
+if log then log.info("[Trainer] wdre9 RE9 Trainer v11.11 loaded") end
